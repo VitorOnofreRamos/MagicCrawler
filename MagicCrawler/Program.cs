@@ -24,7 +24,7 @@ foreach (var linkNode in cardLinks)
         var name = cardHtml.DocumentNode.SelectSingleNode("//h1/span[@class='card-text-card-name']").InnerText;
         var description = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']").InnerText;
         var buttonNode = cardHtml.DocumentNode.SelectSingleNode("//button[@data-card-id]");
-        var cardId = buttonNode?.GetAttributeValue("data-card-id", "");
+        var cardId = buttonNode.GetAttributeValue("data-card-id", "");
 
         cards.Add(new MagicCard(name, description, cardId));
 
@@ -35,7 +35,7 @@ foreach (var linkNode in cardLinks)
 // Exibir os objetos no console
 foreach (var card in cards)
 {
-    Console.WriteLine(card);
+    Console.WriteLine(MagicCardFormatter.FormatForConsole(card));
 }
 
 // Salvar os dados em um arquivo CSV
@@ -43,6 +43,6 @@ var csv = new StringBuilder();
 csv.AppendLine("Name,Description,CardId");
 foreach (var card in cards)
 {
-    csv.AppendLine($"{card.Name},{card.Description},{card.CardId}");
+    csv.AppendLine(MagicCardFormatter.ToCsvLine(card));
 }
 await File.WriteAllTextAsync("cards.csv", csv.ToString());
