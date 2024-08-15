@@ -6,7 +6,7 @@ var collectionUrl = "https://scryfall.com/sets/pcbb";
 var htmlWeb = new HtmlWeb();
 var collectionHtml = await htmlWeb.LoadFromWebAsync(collectionUrl);
 
-/// XPath revisado para encontrar os links das cartas na página da coleção
+// XPath revisado para encontrar os links das cartas na página da coleção
 // Certifique-se de que este XPath corresponda a todos os links das cartas desejados
 var cardLinksXPath = "//a[contains(@class, 'card-grid-item-card')]";
 var cardLinks = collectionHtml.DocumentNode.SelectNodes(cardLinksXPath);
@@ -27,6 +27,8 @@ foreach (var linkNode in cardLinks)
         var cardId = buttonNode?.GetAttributeValue("data-card-id", "");
 
         cards.Add(new MagicCard(name, description, cardId));
+
+        GC.Collect();
     }
 }
 
