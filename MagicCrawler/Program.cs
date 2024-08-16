@@ -12,25 +12,19 @@ var collectionUrl = $"https://scryfall.com/sets/{collectionID}";
 var htmlWeb = new HtmlWeb();
 var collectionHtml = await htmlWeb.LoadFromWebAsync(collectionUrl);
 
-// XPath revisado para encontrar os links das cartas na página da coleção
-// Certifique-se de que este XPath corresponda a todos os links das cartas desejados
-
 var cardLinks = collectionHtml.DocumentNode.SelectNodes("//a[contains(@class, 'card-grid-item-card')]");
 
 var cards = new List<MagicCard>();
-
 
 foreach (var linkNode in cardLinks)
 {
     var cardUrl = linkNode.GetAttributeValue("href", "");
     var cardHtml = await htmlWeb.LoadFromWebAsync(cardUrl);
 
-    // Verificação adicional para evitar URLs inválidos ou repetidos
     var name = cardHtml.DocumentNode.SelectSingleNode("//h1/span[@class='card-text-card-name']").InnerText.Trim();
 
-    // Verifica se o elemento com a classe 'card-text-oracle' existe
-    var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']").SelectNodes(".//p");
-    var description = string.Join(". ", descriptionNode.Select(p => p.InnerText.Trim()));
+    var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']");
+    var description = descriptionNode != null ? string.Join(". ", descriptionNode.SelectNodes(".//p").Select(p => p.InnerText.Trim())) : "Sem descrição";
 
     cards.Add(new MagicCard(HttpUtility.HtmlDecode(name), description));
 
@@ -45,7 +39,3 @@ var csv = new StringBuilder();
 csv.AppendLine("Name # Description");
 csv.AppendLine(string.Join("\n", cards.Select(c => $"{c.Name} # {c.Description}")));
 await File.WriteAllTextAsync("cards.csv", csv.ToString());
-
-//var formattedDescription = Regex.Replace(card.Description.Trim(), "^\\s+", "", RegexOptions.Multiline);
-
-//descriptionNode != null ? descriptionNode.InnerText.Trim() : "Sem Descrição"; // Usa uma string vazia se não encontrar
