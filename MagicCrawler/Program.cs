@@ -30,13 +30,14 @@ foreach (var linkNode in cardLinks)
 
     // Verifica se o elemento com a classe 'card-text-oracle' existe
     var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']").SelectNodes(".//p");
-    var description = string.Join(" ", descriptionNode.Select(p => InnerText));
-
+    var description = string.Join(". ", descriptionNode.Select(p => p.InnerText.Trim()));
 
     cards.Add(new MagicCard(HttpUtility.HtmlDecode(name), description));
 
     GC.Collect();
 }
+
+cards.ForEach(Console.WriteLine);
 
 // Exibir os objetos no console
 // Salvar os dados em um arquivo CSV
