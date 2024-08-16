@@ -1,17 +1,24 @@
 ﻿using HtmlAgilityPack;
 using MagicCrawler;
+using System.Drawing.Printing;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 
-var collectionUrl = "https://scryfall.com/sets/pcbb";
+Console.WriteLine("Escreva o ID da Coleção: ");
+var collectionID = Console.ReadLine();
+var collectionUrl = $"https://scryfall.com/sets/{collectionID}";
+
 var htmlWeb = new HtmlWeb();
 var collectionHtml = await htmlWeb.LoadFromWebAsync(collectionUrl);
 
 // XPath revisado para encontrar os links das cartas na página da coleção
 // Certifique-se de que este XPath corresponda a todos os links das cartas desejados
-var cardLinksXPath = "//a[contains(@class, 'card-grid-item-card')]";
-var cardLinks = collectionHtml.DocumentNode.SelectNodes(cardLinksXPath);
+
+var cardLinks = collectionHtml.DocumentNode.SelectNodes("//a[contains(@class, 'card-grid-item-card')]");
 
 var cards = new List<MagicCard>();
+
 
 foreach (var linkNode in cardLinks)
 {
@@ -19,30 +26,25 @@ foreach (var linkNode in cardLinks)
     var cardHtml = await htmlWeb.LoadFromWebAsync(cardUrl);
 
     // Verificação adicional para evitar URLs inválidos ou repetidos
-    if (!string.IsNullOrEmpty(cardUrl) && !cards.Any(c => c.CardId == cardUrl.Split('/').Last()))
-    {
-        var name = cardHtml.DocumentNode.SelectSingleNode("//h1/span[@class='card-text-card-name']").InnerText;
-        var description = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']").InnerText;
-        var buttonNode = cardHtml.DocumentNode.SelectSingleNode("//button[@data-card-id]");
-        var cardId = buttonNode.GetAttributeValue("data-card-id", "");
+    var name = cardHtml.DocumentNode.SelectSingleNode("//h1/span[@class='card-text-card-name']").InnerText.Trim();
 
-        cards.Add(new MagicCard(name, description, cardId));
+    // Verifica se o elemento com a classe 'card-text-oracle' existe
+    var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']").SelectNodes(".//p");
+    var description = string.Join(" ", descriptionNode.Select(p => InnerText));
 
-        GC.Collect();
-    }
+
+    cards.Add(new MagicCard(HttpUtility.HtmlDecode(name), description));
+
+    GC.Collect();
 }
 
 // Exibir os objetos no console
-foreach (var card in cards)
-{
-    Console.WriteLine(MagicCardFormatter.FormatForConsole(card));
-}
-
 // Salvar os dados em um arquivo CSV
 var csv = new StringBuilder();
-csv.AppendLine("Name,Description,CardId");
-foreach (var card in cards)
-{
-    csv.AppendLine(MagicCardFormatter.ToCsvLine(card));
-}
+csv.AppendLine("Name # Description");
+csv.AppendLine(string.Join("\n", cards.Select(c => $"{c.Name} # {c.Description}")));
 await File.WriteAllTextAsync("cards.csv", csv.ToString());
+
+//var formattedDescription = Regex.Replace(card.Description.Trim(), "^\\s+", "", RegexOptions.Multiline);
+
+//descriptionNode != null ? descriptionNode.InnerText.Trim() : "Sem Descrição"; // Usa uma string vazia se não encontrar
