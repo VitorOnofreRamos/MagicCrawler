@@ -16,20 +16,23 @@ var cardLinks = collectionHtml.DocumentNode.SelectNodes("//a[contains(@class, 'c
 
 var cards = new List<MagicCard>();
 
-foreach (var linkNode in cardLinks)
+Parallel.ForEach(cardLinks, linkNode =>
 {
     var cardUrl = linkNode.GetAttributeValue("href", "");
-    var cardHtml = await htmlWeb.LoadFromWebAsync(cardUrl);
+    var cardHtml = htmlWeb.LoadFromWebAsync(cardUrl).Result;
 
-    var name = cardHtml.DocumentNode.SelectSingleNode("//h1/span[@class='card-text-card-name']").InnerText.Trim();
+    var name = cardHtml.DocumentNode.SelectSingleNode("//*[@class='card-text-card-name']").InnerText.Trim();
 
-    var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//div[@class='card-text-oracle']");
-    var description = descriptionNode != null ? string.Join(". ", descriptionNode.SelectNodes(".//p").Select(p => p.InnerText.Trim())) : "Sem descrição";
+    var descriptionNode = cardHtml.DocumentNode.SelectSingleNode("//*[@class='card-text-oracle']");
+    var description = descriptionNode != null ? string.Join(" ", descriptionNode.SelectNodes(".//p").Select(p => p.InnerText.Trim())) : "Sem descrição";
 
-    cards.Add(new MagicCard(HttpUtility.HtmlDecode(name), description));
+    cards.Add(new MagicCard(
+        HttpUtility.HtmlDecode(name), 
+        HttpUtility.HtmlDecode(description)
+        ));
 
     GC.Collect();
-}
+});
 
 cards.ForEach(Console.WriteLine);
 
@@ -38,4 +41,4 @@ cards.ForEach(Console.WriteLine);
 var csv = new StringBuilder();
 csv.AppendLine("Name # Description");
 csv.AppendLine(string.Join("\n", cards.Select(c => $"{c.Name} # {c.Description}")));
-await File.WriteAllTextAsync("cards.csv", csv.ToString());
+await File.WriteAllTextAsync("cards.csv", csv.ToString(), Encoding.UTF8);
